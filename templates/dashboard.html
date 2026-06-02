@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudPulse — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080c14; --surface: #0d1421; --surface2: #111827;
+    --border: #1a2540; --accent: #00e5ff; --accent2: #7b61ff;
+    --green: #00ff88; --yellow: #ffd60a; --red: #ff4d6d;
+    --text: #e8edf5; --muted: #4a5568; --muted2: #6b7280;
+    --mono: 'Space Mono', monospace; --sans: 'Syne', sans-serif;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,229,255,0.025) 1px,transparent 1px), linear-gradient(90deg,rgba(0,229,255,0.025) 1px,transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── Navbar ── */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 60px;
+    background: rgba(13,20,33,0.9); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  .nav-logo { font-family: var(--mono); font-size: 14px; color: var(--accent); letter-spacing: 3px; }
+  .nav-logo span { color: var(--muted); }
+
+  .nav-right { display: flex; align-items: center; gap: 24px; }
+
+  .nav-user { font-family: var(--mono); font-size: 11px; color: var(--muted2); }
+  .nav-user strong { color: var(--accent); }
+
+  .nav-logout {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    text-decoration: none; letter-spacing: 1px; padding: 6px 12px;
+    border: 1px solid var(--border); border-radius: 2px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .nav-logout:hover { border-color: var(--red); color: var(--red); }
+
+  .live-indicator { display: flex; align-items: center; gap: 6px; }
+  .live-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; animation: blink 1.5s ease-in-out infinite; }
+  .live-label { font-family: var(--mono); font-size: 10px; color: var(--green); letter-spacing: 2px; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  /* ── Layout ── */
+  main { max-width: 1300px; margin: 0 auto; padding: 32px 24px; position: relative; z-index: 1; }
+
+  .page-header { margin-bottom: 32px; }
+  .page-header h1 { font-size: 32px; font-weight: 800; }
+  .page-header p { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: 1px; }
+
+  /* ── Stat Cards ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 2px;
+    padding: 24px; position: relative; overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent-color, var(--accent)); }
+
+  .stat-label { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+  .stat-value { font-family: var(--mono); font-size: 32px; font-weight: 700; color: var(--accent-color, var(--accent)); line-height: 1; }
+  .stat-sub { font-family: var(--mono); font-size: 10px; color: var(--muted2); margin-top: 8px; }
+
+  /* ── Two-col grid ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  @media(max-width:900px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── Panels ── */
+  .panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 24px;
+  }
+  .panel-title {
+    font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  /* ── Chart ── */
+  .chart-wrap { height: 140px; display: flex; align-items: flex-end; gap: 4px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .bar {
+    width: 100%; background: var(--accent2); border-radius: 2px 2px 0 0;
+    transition: height 0.5s ease; min-height: 2px;
+    position: relative;
+  }
+  .bar:hover { background: var(--accent); }
+  .bar-label { font-family: var(--mono); font-size: 8px; color: var(--muted); text-align: center; white-space: nowrap; overflow: hidden; }
+
+  /* ── Log table ── */
+  .log-table { width: 100%; border-collapse: collapse; }
+  .log-table th { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; padding: 8px; text-align: left; border-bottom: 1px solid var(--border); }
+  .log-table td { font-family: var(--mono); font-size: 11px; color: var(--muted2); padding: 10px 8px; border-bottom: 1px solid rgba(26,37,64,0.5); }
+  .log-table tr:last-child td { border-bottom: none; }
+  .method-badge {
+    display: inline-block; padding: 2px 6px; border-radius: 2px; font-size: 9px;
+    font-weight: 700; letter-spacing: 1px;
+  }
+  .method-GET { background: rgba(0,229,255,0.1); color: var(--accent); }
+  .method-POST { background: rgba(0,255,136,0.1); color: var(--green); }
+
+  /* ── Top routes ── */
+  .route-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(26,37,64,0.5); }
+  .route-row:last-child { border-bottom: none; }
+  .route-path { font-family: var(--mono); font-size: 12px; color: var(--text); }
+  .route-bar-wrap { flex: 1; margin: 0 16px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .route-bar-fill { height: 100%; background: var(--accent2); border-radius: 2px; transition: width 0.5s ease; }
+  .route-count { font-family: var(--mono); font-size: 11px; color: var(--accent); min-width: 30px; text-align: right; }
+
+  /* ── Server status ── */
+  .status-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(26,37,64,0.5); }
+  .status-row:last-child { border-bottom: none; }
+  .status-key { font-family: var(--mono); font-size: 11px; color: var(--muted2); }
+  .status-val { font-family: var(--mono); font-size: 11px; color: var(--text); }
+  .badge-online { color: var(--green); }
+  .badge-offline { color: var(--red); }
+
+  .refresh-note { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 1px; }
+
+  /* Loading */
+  .skeleton { background: linear-gradient(90deg, var(--border) 25%, var(--surface2) 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 2px; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Cloud<span>//</span>Pulse</div>
+  <div class="nav-right">
+    <div class="live-indicator">
+      <div class="live-dot"></div>
+      <span class="live-label">LIVE</span>
+    </div>
+    <div class="nav-user">Logged in as <strong>{{ username }}</strong></div>
+    <a href="/logout" class="nav-logout">LOGOUT</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-header">
+    <h1>System Dashboard</h1>
+    <p>// REAL-TIME APPLICATION MONITORING — AUTO-REFRESH EVERY 10s</p>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="stats-grid">
+    <div class="stat-card" style="--accent-color: var(--green)">
+      <div class="stat-label">Server Status</div>
+      <div class="stat-value" id="stat-status">--</div>
+      <div class="stat-sub">Cloud Instance</div>
+    </div>
+    <div class="stat-card" style="--accent-color: var(--accent)">
+      <div class="stat-label">Uptime</div>
+      <div class="stat-value" id="stat-uptime" style="font-size:20px;padding-top:8px">--</div>
+      <div class="stat-sub">Since last deploy</div>
+    </div>
+    <div class="stat-card" style="--accent-color: var(--accent2)">
+      <div class="stat-label">Total Users</div>
+      <div class="stat-value" id="stat-users">--</div>
+      <div class="stat-sub">Registered accounts</div>
+    </div>
+    <div class="stat-card" style="--accent-color: var(--yellow)">
+      <div class="stat-label">Active Users</div>
+      <div class="stat-value" id="stat-active" style="--accent-color:var(--yellow)">--</div>
+      <div class="stat-sub">Last 1 hour</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Requests</div>
+      <div class="stat-value" id="stat-total-req">--</div>
+      <div class="stat-sub">All time</div>
+    </div>
+    <div class="stat-card" style="--accent-color: var(--green)">
+      <div class="stat-label">Requests Today</div>
+      <div class="stat-value" id="stat-today-req">--</div>
+      <div class="stat-sub">Last 24 hours</div>
+    </div>
+  </div>
+
+  <!-- Chart + Server Info -->
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title">
+        Requests / Hour (Last 12h)
+        <span class="refresh-note">AUTO-REFRESH</span>
+      </div>
+      <div class="chart-wrap" id="hourly-chart">
+        <div style="color:var(--muted);font-family:var(--mono);font-size:11px;margin:auto">Loading...</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Server Information</div>
+      <div id="server-info">
+        <div class="status-row"><span class="status-key">STATUS</span><span class="status-val badge-online" id="srv-status">--</span></div>
+        <div class="status-row"><span class="status-key">PLATFORM</span><span class="status-val">Render Cloud</span></div>
+        <div class="status-row"><span class="status-key">RUNTIME</span><span class="status-val">Python / Flask</span></div>
+        <div class="status-row"><span class="status-key">DATABASE</span><span class="status-val">MongoDB Atlas</span></div>
+        <div class="status-row"><span class="status-key">UPTIME</span><span class="status-val" id="srv-uptime">--</span></div>
+        <div class="status-row"><span class="status-key">TOTAL REQUESTS</span><span class="status-val" id="srv-req">--</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logs + Top Routes -->
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title">Recent Request Logs</div>
+      <table class="log-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Method</th>
+            <th>Path</th>
+            <th>User</th>
+          </tr>
+        </thead>
+        <tbody id="log-body">
+          <tr><td colspan="4" style="color:var(--muted);font-family:var(--mono);font-size:11px">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Top Routes</div>
+      <div id="top-routes">
+        <div style="color:var(--muted);font-family:var(--mono);font-size:11px">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+let maxHourly = 1;
+
+async function fetchMetrics() {
+  try {
+    const res = await fetch('/api/metrics');
+    const d = await res.json();
+
+    // Stat cards
+    document.getElementById('stat-status').textContent = d.server_status;
+    document.getElementById('stat-uptime').textContent = d.uptime;
+    document.getElementById('stat-users').textContent = d.total_users;
+    document.getElementById('stat-active').textContent = d.active_users;
+    document.getElementById('stat-total-req').textContent = d.total_requests;
+    document.getElementById('stat-today-req').textContent = d.requests_today;
+
+    // Server info
+    document.getElementById('srv-status').textContent = d.server_status;
+    document.getElementById('srv-uptime').textContent = d.uptime;
+    document.getElementById('srv-req').textContent = d.total_requests;
+
+    // Hourly chart
+    const maxVal = Math.max(...d.hourly_chart.map(h => h.count), 1);
+    const chartWrap = document.getElementById('hourly-chart');
+    chartWrap.innerHTML = d.hourly_chart.map(h => {
+      const pct = Math.max((h.count / maxVal) * 120, 2);
+      return `<div class="bar-col">
+        <div class="bar" style="height:${pct}px" title="${h.count} req"></div>
+        <div class="bar-label">${h.hour}</div>
+      </div>`;
+    }).join('');
+
+    // Log table
+    const tbody = document.getElementById('log-body');
+    if (d.recent_logs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);font-family:var(--mono);font-size:11px">No logs yet</td></tr>';
+    } else {
+      tbody.innerHTML = d.recent_logs.map(log => `
+        <tr>
+          <td>${log.timestamp}</td>
+          <td><span class="method-badge method-${log.method}">${log.method}</span></td>
+          <td>${log.path}</td>
+          <td>${log.user}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Top routes
+    const routeWrap = document.getElementById('top-routes');
+    if (d.top_routes.length === 0) {
+      routeWrap.innerHTML = '<div style="color:var(--muted);font-family:var(--mono);font-size:11px">No data yet</div>';
+    } else {
+      const maxCount = Math.max(...d.top_routes.map(r => r.count));
+      routeWrap.innerHTML = d.top_routes.map(r => {
+        const pct = (r.count / maxCount) * 100;
+        return `<div class="route-row">
+          <div class="route-path">${r.path}</div>
+          <div class="route-bar-wrap"><div class="route-bar-fill" style="width:${pct}%"></div></div>
+          <div class="route-count">${r.count}</div>
+        </div>`;
+      }).join('');
+    }
+
+  } catch (e) {
+    console.error('Metrics fetch failed:', e);
+  }
+}
+
+fetchMetrics();
+setInterval(fetchMetrics, 10000);
+</script>
+</body>
+</html>
