@@ -12,6 +12,21 @@ https://cloud-pulse-l4lr.onrender.com/login
 
 ---
 
+
+## 📸 Screenshots
+
+### Login Guide
+![Login](Screenshots/login.png)
+
+### Register Section
+![Register](Screenshots/Register.png)
+
+### Dashboard
+![Dashboard](Screenshots/Dashboard.png)
+
+
+---
+
 ## 🏗️ Architecture
 
 ```
@@ -54,7 +69,6 @@ cloudpulse/
 ├── requirements.txt       # Python dependencies
 ├── Dockerfile             # Container config
 ├── render.yaml            # Render deployment config
-├── .gitignore
 ├── README.md
 └── templates/
     ├── login.html         # Login page
@@ -141,5 +155,17 @@ git push -u origin main
 
 ---
 
-## 👩‍💻 Author
+## 👤 Author
+
+**Name**: Minaam Zahoor Mir  
+🔗 [LinkedIn](https://www.linkedin.com/in/minaam-zahoor-mir-06802b413/)
+🌐 [GitHub](https://github.com/minaam007)
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+---
 
